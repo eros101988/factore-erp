@@ -30,19 +30,19 @@ description: "Task list for B2 Live Rollout (001-b2-live-rollout)"
 
 ## Phase 1: Local sanity and preparation (no Live access)
 
-- [ ] T001 Create `specs/001-b2-live-rollout/rollout/` (`rollout-record.md`, `evidence/`, `sql/`, `recovery/`). Record the migration-name ↔ file map (plan Stage 4).
+- [X] T001 Create `specs/001-b2-live-rollout/rollout/` (`rollout-record.md`, `evidence/`, `sql/`, `recovery/`). Record the migration-name ↔ file map (plan Stage 4).
   - **Acceptance:** the files exist, with the sections from data-model.md.
-- [ ] T002 Local sanity (plan Stage 0).
+- [X] T002 Local sanity (plan Stage 0).
   - **Acceptance:**
     - clean tree, up to date with `main`;
     - hashes of `supabase/migrations/0008_*.sql`, `0009_*.sql`, `0010_*.sql` recorded and unchanged since the B2 merge;
     - `npx vitest run` passes 48/48;
     - evidence in `rollout/evidence/00-local.txt`.
-- [ ] T003 [P] Author the read-only SQL in `rollout/sql/`: preflight inventory, conflicts, baseline counts, privileges, and test-subject lookup (contracts/inspection-report.md); post-checks for 0008, 0009, and 0010 (contracts/verification-result.md §A); cleanup/reconciliation (§C).
+- [X] T003 [P] Author the read-only SQL in `rollout/sql/`: preflight inventory, conflicts, baseline counts, privileges, and test-subject lookup (contracts/inspection-report.md); post-checks for 0008, 0009, and 0010 (contracts/verification-result.md §A); cleanup/reconciliation (§C).
   - **Acceptance:** every check in those sections maps to a query that returns `{id, result, detail}`.
-- [ ] T004 [P] Author the B-check scripts in `rollout/sql/verify-*.sql` for every §B item. They use forced-rollback transactions (research R-3) and identity simulation (research R-4, no Auth users).
+- [X] T004 [P] Author the B-check scripts in `rollout/sql/verify-*.sql` for every §B item. They use forced-rollback transactions (research R-3) and identity simulation (research R-4, no Auth users).
   - **Acceptance:** each script always ends in `B2_VERIFY_RESULT`, and any other ending is FAIL.
-- [ ] T005 [P] [US4] Author the reverse scripts `rollout/recovery/R-0008.sql`, `R-0009.sql`, and `R-0010.sql`, plus `recovery-runbook.md`, following the plan's "Failure & Recovery" table.
+- [X] T005 [P] [US4] Author the reverse scripts `rollout/recovery/R-0008.sql`, `R-0009.sql`, and `R-0010.sql`, plus `recovery-runbook.md`, following the plan's "Failure & Recovery" table.
   - **Acceptance:**
     - each script is guarded and transactional;
     - each aborts if B2 tables or the bucket hold data;

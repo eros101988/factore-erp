@@ -1,0 +1,36 @@
+# T006 PGlite dry-run — 2026-11-07 22:21 (Asia/Taipei) (synthetic local data only; harness kept outside the repo)
+OK   preflight-inventory — prereq all present=true, 0008-0010 all absent=true
+OK   preflight-conflicts — ["bucket_objects_informational=0","pem_duplicate_supplier_code=0","pem_status_outside_allowed=0","pricing_policies_existing_rows=null","pricing_policies_margin_out_of_range=null","pricing_policies_more_than_one_open_per_tier=null","pricing_policies_tier_outside_allowed=null","supplier_price_list_items_existing_rows=null","supplier_price_lists_existing_rows=null","supplier_price_lists_status_outside_allowed=null"]
+OK   baseline-counts — 21 entries
+OK   privileges (pre) — 15 rows
+OK   test-subject — {"id":"11111111-1111-1111-1111-111111111111","role":"admin","is_active":true,"test_subject_ok":true}
+OK   read-only recount
+OK   rls-probe runs read-only — FINDING (repo migrations): {"user_profiles_read": "ERROR: infinite recursion detected in policy for relation \"user_profiles\"", "b1_policy_table_read": "ERROR: infinite recursion detected in policy for relation \"user_profiles\""}
+OK   postcheck-0008
+OK   postcheck-0009
+OK   postcheck-0010
+OK   privileges (post)
+OK   B-01 — PUBLISH_BLOCKED: 1 unmapped, 0 invalid cost, 0 error rows. Fix or ignore explicitly before publishing. | cost_rows=0
+OK   B-02 — PUBLISH_BLOCKED: 0 unmapped, 1 invalid cost, 1 error rows. Fix or ignore explicitly before publishing. | cost_rows=0
+OK   B-03 — returned=1 cost_rows=1
+OK   B-04 — duplicate key value violates unique constraint "pch_source_item_unique" | cost_rows=0 mappings=0 audit=0 status=needs_review
+OK   B-05 — nov=1464.0000 dec=1520.0000 rows=2 mapping=confirmed:true
+OK   B-06 — admin: purchase_cost_history is append-only: UPDATE is not allowed (insert a new effective record instead) | owner: purchase_cost_history is append-only: UPDATE is not allowed (insert a new effective record instead)
+OK   B-07 — Price list is already published
+OK   B-08 — 10-31=COST_NOT_FOUND 11-15=1464.0000 11-30=1464.0000 12-01=1520.0000
+OK   B-09a — publish: Only active admins can publish price lists | policy: Only active admins can change pricing policies
+OK   B-09b — publish: Only active admins can publish price lists | policy: Only active admins can change pricing policies
+OK   B-10 — open_medium=1 default=0.2100 closed 0->1 tiers_not_one_open=0
+FAIL B-11-staff — staff read: ERROR infinite recursion detected in policy for relation "user_profiles" | staff insert: infinite recursion detected in policy for relation "user_profiles"
+OK   B-11-anon — anon rows=0
+OK   B-12 — b1_rows 2->2 p2_effective=COST_NOT_FOUND
+OK   rollback: counts unchanged after verify
+OK   cleanup-reconcile — ["audit_logs=0","pricing_policies_open_rows=3","product_external_mappings=0","products=0","purchase_cost_history=0","quote_items=0","quotes=0","supplier_price_list_items=0","supplier_price_lists=0","suppliers=0"]
+OK   test subject unchanged
+OK   R-0010 -> post-0009 state
+OK   R-0009 -> post-0008 state
+OK   R-0008 -> pre-0008 state
+OK   history entries removed
+OK   counts back to baseline (except bucket)
+OK   R-0008 guard — R-0008 aborted: run R-0010/R-0009 first (publish function still present)
+DRY-RUN: 33 OK, 1 FAIL

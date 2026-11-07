@@ -1,0 +1,18 @@
+# T002 Local sanity — 2026-11-07 22:11 (Asia/Taipei)
+branch: 001-b2-live-rollout @ b6601aa (== origin/main b6601aa), working tree clean
+migration blob hashes (HEAD == B2 merge 71dff37):
+  0008_b2_pricing_foundation.sql  5316bd65b67e3f883ae035234cd6ef35a8016e8c  unchanged
+  0009_b2_publish_rpc.sql         de11dcb913c4d1ba6e3b8cbb205df5c4cd8de656  unchanged
+  0010_b2_cost_integrity.sql      7fa1e20d9e09f913280b74e4681ecac87c0eb581  unchanged
+npx vitest run: Test Files 6 passed (6); Tests 48 passed (48)
+T002 RESULT: PASS
+
+# T003-T005 authored: sql/{preflight-inventory,preflight-conflicts,baseline-counts,privileges,test-subject,rls-probe,postcheck-0008,postcheck-0009,postcheck-0010,cleanup-reconcile,verify-B01-B04,verify-B05-B08,verify-B09-B12}.sql, recovery/{R-0008,R-0009,R-0010}.sql, recovery/recovery-runbook.md
+# T006 PGlite dry-run (2026-11-07 22:21 (Asia/Taipei)): 33 OK, 1 FAIL — see evidence/00-dryrun.txt
+  dry-run fixes made: privileges.sql ("char" cast); verify-B09-B12.sql (B-09b / B-11-staff recorded separately)
+  FAIL B-11-staff: staff read/insert -> "infinite recursion detected in policy for relation user_profiles"
+  Root cause (repo, pre-existing, not B2): 0002 policies "Admins can read all profiles" / "Admins can update all profiles"
+    query user_profiles inside a user_profiles policy. All B1/B2 policies of the form
+    auth.uid() IN (SELECT id FROM user_profiles ...) and the app's profile/role lookups inherit it.
+  Live status of this defect: UNKNOWN (S1.6 report marks 0002 NOT TESTED on Live). rls-probe.sql added to observe it read-only.
+T006 RESULT: FAIL -> run stopped before T007 (no Live access performed)
