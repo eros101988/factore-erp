@@ -1,7 +1,15 @@
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { Product, CostHistory, Quote, DEMO_PRODUCTS, DEMO_COST_HISTORY, DEMO_TIERS, DEMO_CHANNELS, DEMO_CHANNEL_FEES, DEMO_QUOTES } from '@/lib/data/demo';
-import { Decimal } from 'decimal.js';
+import { Product, Quote, DEMO_PRODUCTS, DEMO_CHANNELS, DEMO_CHANNEL_FEES, DEMO_QUOTES } from '@/lib/data/demo';
+import {
+  COST_NOT_FOUND,
+  EffectiveCostResult,
+  PricingPolicyRow,
+  getEffectiveProductCost,
+  getPricingPolicies,
+  toDateString,
+} from '@/lib/pricing/costResolver';
+import type { QuoteItemSnapshot } from '@/lib/pricing/quote';
 
 // Check if we have Supabase connected
 export const isSupabaseConfigured = () => {
@@ -22,6 +30,21 @@ const getSupabaseClient = async () => {
   return createBrowserClient();
 };
 
+export interface QuoteHeaderInput {
+  customer_name: string;
+  channel_id: string;
+  tier_name: string;
+  pricing_policy_id: string | null;
+  total_untaxed: number;
+  total_tax: number;
+  total_amount: number;
+}
+
+function newQuoteNumber() {
+  const now = new Date();
+  return `Q${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(Date.now()).slice(-6)}`;
+}
+
 export class ProductRepository {
   static async getProducts(): Promise<Product[]> {
     enforceConfigInProduction();
@@ -29,96 +52,57 @@ export class ProductRepository {
       return DEMO_PRODUCTS;
     }
     const supabase = await getSupabaseClient();
-    const { data, error } = await supabase.from('products').select('*').eq('is_active', true);
+    const { data, error } = await supabase.from('products').select('*').eq('is_active', true).order('internal_sku');
     if (error) throw error;
     return data as Product[];
   }
 
-  static async getEffectiveCost(productId: string, dateStr: string): Promise<CostHistory | null> {
+  /**
+   * Published supplier cost in force on dateStr. Never falls back to 0 / demo / future cost.
+   */
+  static async getEffectiveCost(productId: string, dateStr: string): Promise<EffectiveCostResult> {
     enforceConfigInProduction();
-    if (!isSupabaseConfigured()) {
-      const histories = DEMO_COST_HISTORY.filter(h => h.product_id === productId && h.effective_date <= dateStr);
-      if (histories.length === 0) return null;
-      histories.sort((a, b) => b.effective_date.localeCompare(a.effective_date));
-      return histories[0];
-    }
-    const supabase = await getSupabaseClient();
-    const { data, error } = await supabase
-      .from('purchase_cost_history')
-      .select('*')
-      .eq('product_id', productId)
-      .lte('effective_date', dateStr)
-      .order('effective_date', { ascending: false })
-      .limit(1)
-      .single();
-      
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is not found
-    return data as CostHistory | null;
+    if (!isSupabaseConfigured()) return { ok: false, code: COST_NOT_FOUND };
+    return getEffectiveProductCost(productId, dateStr);
   }
 }
 
 export class QuoteRepository {
-  static async saveQuote(quoteData: Omit<Quote, 'id' | 'quote_number' | 'created_at'>): Promise<Quote> {
+  static async saveQuote(header: QuoteHeaderInput, items: QuoteItemSnapshot[]): Promise<Quote> {
     enforceConfigInProduction();
     if (!isSupabaseConfigured()) {
-      const newQuote: Quote = {
-        ...quoteData,
+      const newQuote = {
+        ...header,
+        items,
         id: `quote-${Date.now()}`,
-        quote_number: `Q${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Date.now()).slice(-4)}`,
-        created_at: new Date().toISOString()
-      };
+        quote_number: newQuoteNumber(),
+        created_at: new Date().toISOString(),
+      } as unknown as Quote;
       DEMO_QUOTES.push(newQuote);
       return newQuote;
     }
 
     const supabase = await getSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     // 1. Insert Quote Header
-    const quoteNumber = `Q${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Date.now()).slice(-4)}`;
-    
     const { data: quoteHeader, error: headerError } = await supabase.from('quotes').insert({
-      quote_number: quoteNumber,
-      customer_name: quoteData.customer_name,
-      channel_id: quoteData.channel_id,
-      tier_name: quoteData.tier_name,
-      total_untaxed: quoteData.total_untaxed,
-      total_tax: quoteData.total_tax,
-      total_amount: quoteData.total_amount,
-      pricing_version: 'v1'
+      quote_number: newQuoteNumber(),
+      ...header,
+      created_by: user?.id,
+      pricing_version: 'v2',
     }).select().single();
 
     if (headerError) throw headerError;
 
-    // 2. Insert Quote Items
-    const itemsToInsert = quoteData.items.map(item => ({
-      quote_id: quoteHeader.id,
-      product_id: item.product_id,
-      internal_sku: item.internal_sku,
-      product_name: item.product_name,
-      specification: item.specification,
-      unit: item.unit,
-      quantity: item.quantity,
-      unit_cost: item.unit_cost,
-      effective_cost_date: item.effective_cost_date,
-      fixed_cost: item.fixed_cost,
-      channel_fee_rate: item.channel_fee_rate,
-      target_margin: item.target_margin,
-      unit_price: item.unit_price,
-      subtotal: item.subtotal,
-      tax_rate: item.tax_rate,
-      tax_amount: item.tax_amount,
-      total: item.total
-    }));
+    // 2. Insert Quote Items (full snapshot; never re-read from cost tables later)
+    const { error: itemsError } = await supabase
+      .from('quote_items')
+      .insert(items.map(item => ({ quote_id: quoteHeader.id, ...item })));
 
-    const { error: itemsError } = await supabase.from('quote_items').insert(itemsToInsert);
-    
     if (itemsError) throw itemsError;
 
-    return {
-      ...quoteData,
-      id: quoteHeader.id,
-      quote_number: quoteHeader.quote_number,
-      created_at: quoteHeader.created_at
-    };
+    return { ...quoteHeader, items } as unknown as Quote;
   }
 
   static async getQuotes(): Promise<Quote[]> {
@@ -138,20 +122,17 @@ export class QuoteRepository {
 }
 
 export class ConfigRepository {
-  static async getTiers() {
+  static async getPricingPolicies(dateStr: string): Promise<PricingPolicyRow[]> {
     enforceConfigInProduction();
-    if (!isSupabaseConfigured()) return DEMO_TIERS;
-    const supabase = await getSupabaseClient();
-    const { data, error } = await supabase.from('tier_policies').select('*');
-    if (error) throw error;
-    return data.map(d => ({ id: d.id, name: d.tier_name, defaultMargin: parseFloat(d.default_margin) }));
+    if (!isSupabaseConfigured()) return [];
+    return getPricingPolicies(dateStr);
   }
 
-  static async getChannels() {
+  static async getChannels(): Promise<{ id: string; name: string }[]> {
     enforceConfigInProduction();
     if (!isSupabaseConfigured()) return DEMO_CHANNELS;
     const supabase = await getSupabaseClient();
-    const { data, error } = await supabase.from('sales_channels').select('*');
+    const { data, error } = await supabase.from('sales_channels').select('*').order('name');
     if (error) throw error;
     return data;
   }
@@ -164,11 +145,11 @@ export class ConfigRepository {
       .from('channel_fee_rules')
       .select('*')
       .eq('channel_id', channelId)
-      .lte('effective_date', new Date().toISOString().split('T')[0])
+      .lte('effective_date', toDateString(new Date()))
       .order('effective_date', { ascending: false })
       .limit(1)
       .single();
-      
+
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return { feeRate: 0, fixedFee: 0 };
     return { feeRate: parseFloat(data.fee_percentage), fixedFee: parseFloat(data.fixed_fee) };

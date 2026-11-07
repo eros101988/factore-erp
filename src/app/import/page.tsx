@@ -1,7 +1,7 @@
-import CSVImport from "@/components/CSVImport";
+import DataIntakeWizard from "@/components/DataIntakeWizard";
 
 export default function ImportPage() {
   return (
-    <CSVImport />
+    <DataIntakeWizard />
   );
 }

@@ -35,11 +35,16 @@ export default function QuoteHistory({ initialQuotes }: QuoteHistoryProps) {
                 <div>
                   <div className="font-medium text-gray-700">{item.product_name}</div>
                   <div className="text-xs text-gray-500">
-                    {item.quantity} {item.unit} × NT$ {item.unit_price.toLocaleString()}
+                    {item.quantity} {item.unit} × NT$ {Number(item.unit_price).toLocaleString()}
                   </div>
+                  {item.supplier_sku && (
+                    <div className="text-[11px] text-gray-400">
+                      成本 {item.supplier_name} · {item.supplier_sku} · {item.effective_cost_date} · NT$ {Number(item.unit_cost).toLocaleString()}/{item.cost_unit ?? item.unit} · 毛利 {(Number(item.target_margin) * 100).toFixed(1)}%
+                    </div>
+                  )}
                 </div>
                 <div className="font-medium text-gray-800">
-                  NT$ {item.subtotal.toLocaleString()}
+                  NT$ {Number(item.subtotal).toLocaleString()}
                 </div>
               </div>
             ))}
