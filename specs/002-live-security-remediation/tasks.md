@@ -37,18 +37,18 @@ description: "Task list for Live Security Remediation (002-live-security-remedia
 
 ## Phase 1: Local baseline (no Live access)
 
-- [ ] T001 Create `rollout/` (`rollout-record.md`, `evidence/`, `sql/`, `recovery/`). Record the hashes of migrations 0001–0010; `0010_b2_cost_integrity.sql` must be unchanged. Run `npx vitest run`.
+- [X] T001 Create `rollout/` (`rollout-record.md`, `evidence/`, `sql/`, `recovery/`). Record the hashes of migrations 0001–0010; `0010_b2_cost_integrity.sql` must be unchanged. Run `npx vitest run`.
   - **Acceptance:** `evidence/00-local.txt` shows the hashes and a vitest pass.
-- [ ] T002 [US3] Author `tests/security_rls_matrix.test.ts`: a PGlite replay helper (fresh and Live-like), the five-role matrix driven by contracts/access-model.md, and inventory/ACL comparison helpers (research R-5).
+- [X] T002 [US3] Author `tests/security_rls_matrix.test.ts`: a PGlite replay helper (fresh and Live-like), the five-role matrix driven by contracts/access-model.md, and inventory/ACL comparison helpers (research R-5).
   - **Acceptance:** on the current repo (0001 → 0009, no fix), the test runs and reproduces the known recursion cells as the documented **baseline**, recorded in `evidence/00-baseline.txt`. It is not yet expected to pass.
 
 ---
 
 ## Phase 2: Containment, local (US1)
 
-- [ ] T003 [US1] Author `supabase/migrations/0009a_revoke_legacy_publish.sql` (plan Decision 1: revoke from `PUBLIC`, `anon`, `authenticated`; nothing else) and a template for `rollout/recovery/R-0009a.sql` (a GRANT back to the grantees that T005 records).
+- [X] T003 [US1] Author `supabase/migrations/0009a_revoke_legacy_publish.sql` (plan Decision 1: revoke from `PUBLIC`, `anon`, `authenticated`; nothing else) and a template for `rollout/recovery/R-0009a.sql` (a GRANT back to the grantees that T005 records).
   - **Acceptance:** 0009a contains only the revoke. The reversal template exists.
-- [ ] T004 [US1] Local verification of 0009a: §L-04 and §L-05. Also dry-run `R-0009a.sql` locally and time it.
+- [X] T004 [US1] Local verification of 0009a: §L-04 and §L-05. Also dry-run `R-0009a.sql` locally and time it.
   - **Acceptance:**
     - after 0009a, anon, authenticated, and PUBLIC can't execute the two-argument function, and nothing else differs from post-0009;
     - the full suite passes;
@@ -58,7 +58,7 @@ description: "Task list for Live Security Remediation (002-live-security-remedia
 
 ## Phase 3: Containment, Live (US1) — gates G1 → G2
 
-- [ ] T005 [US1] Take the Live **read-only** pre-containment snapshot (plan Decision 6, G1):
+- [X] T005 [US1] Take the Live **read-only** pre-containment snapshot (plan Decision 6, G1):
   - re-confirm facts F1–F6;
   - the two-argument function's `proacl` and per-role EXECUTE;
   - the object inventory, row counts, and the usage baseline (§C-06).

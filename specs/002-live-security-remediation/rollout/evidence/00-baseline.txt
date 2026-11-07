@@ -1,0 +1,30 @@
+# T002 baseline matrix: repo migrations 0001 -> 0009 on PGlite (no remediation), 2026-11-07 23:51 (Asia/Taipei)
+# Cells per contracts/access-model.md; RECURSION = infinite recursion in user_profiles policy.
+# Expected baseline (documents F2/F4/F5): all profile/B1/B2 cells RECURSION for authenticated roles; S1 + helpers correct; N and X can execute the legacy publish function.
+
+profile.own.read                        A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=RECURSION     
+profile.other.read                      A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=RECURSION     
+profile.update                          A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=RECURSION     
+B1.import_batches.read                  A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B1.import_batches.write                 A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B1.customers.read                       A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B1.customers.write                      A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B1.historical_sales.read                A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B1.historical_sales.write               A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B1.historical_purchases.read            A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B1.historical_purchases.write           A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B1.product_external_mappings.read       A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B1.product_external_mappings.write      A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B1.import_staging_rows.read             A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B1.import_staging_rows.write            A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B2.pricing_policies.read                A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B2.pricing_policies.write               A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B2.supplier_price_lists.read            A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B2.supplier_price_lists.write           A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+B2.supplier_price_list_items.read       A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=0 rows        
+B2.supplier_price_list_items.write      A=RECURSION     S=RECURSION     I=RECURSION     N=RECURSION     X=deny          
+S1.products.read                        A=yes           S=yes           I=0 rows        N=0 rows        X=0 rows        
+S1.products.write                       A=yes           S=deny          I=deny          N=deny          X=deny          
+fn.is_admin                             A=true          S=false         I=false         N=false         X=false         
+fn.is_active_user                       A=true          S=true          I=false         N=false         X=false         
+fn.publish_2arg.execute                 A=yes           S=ERROR Only active admins can publish price listsI=ERROR Only active admins can publish price listsN=yes           X=yes           
