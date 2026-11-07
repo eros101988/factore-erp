@@ -13,7 +13,7 @@
 
 ## R-2 Canonical sequence
 
-- **Decision**: insert `0009a_revoke_legacy_publish.sql` and `0009b_fix_profile_rls_recursion.sql` between `0009` and the unapplied `0010`. No renames.
+- **Decision**: insert `0009a_revoke_legacy_publish.sql` and `0009b_fix_rls_recursion.sql` between `0009` and the unapplied `0010`. No renames.
 - **Rationale**:
   - Lexical order puts `0009_` < `0009a_` < `0009b_` < `0010_` (verified with a JS sort, which the PGlite tests use).
   - Live applies only the missing steps, in file order, and history versions are apply timestamps. So history order equals file order, and a fresh replay equals Live.

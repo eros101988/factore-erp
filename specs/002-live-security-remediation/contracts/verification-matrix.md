@@ -30,7 +30,7 @@ Results are PASS, FAIL, NOT TESTED, or BLOCKED, each with evidence. **NOT TESTED
 | M-01…M-05 | Each role A/S/I/N/X against every row of contracts/access-model.md. One result per role × object × action cell. |
 | M-06 | 0 recursion errors in any cell |
 | M-07 | Helper definitions show `SET search_path TO ''` and qualified table names; results match the access model |
-| M-08 | `list_migrations` shows `0009b_fix_profile_rls_recursion.sql` right after 0009a |
+| M-08 | `list_migrations` shows `0009b_fix_rls_recursion.sql` right after 0009a |
 
 ## §R Reconciliation
 

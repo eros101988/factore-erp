@@ -9,7 +9,7 @@
 The work happens in two separately gated Live steps, both inserted **before** the repo's unapplied 0010. No existing file is renamed.
 
 1. **`0009a_revoke_legacy_publish.sql` (containment).** Revoke EXECUTE on the two-argument `publish_supplier_price_list(uuid, uuid)` from `PUBLIC`, `anon`, and `authenticated`. Applied alone, verified alone, and reversible with one pre-written GRANT script.
-2. **`0009b_fix_profile_rls_recursion.sql` (permanent fix).** Rewrite the `user_profiles`, B1, and B2 policies to use the existing SECURITY DEFINER helpers `is_admin()` / `is_active_user()`, and harden those helpers' `search_path`. Applied only after a local five-role matrix PASS, the backup gate, and approval.
+2. **`0009b_fix_rls_recursion.sql` (permanent fix).** Rewrite the `user_profiles`, B1, and B2 policies to use the existing SECURITY DEFINER helpers `is_admin()` / `is_active_user()`, and harden those helpers' `search_path`. Applied only after a local five-role matrix PASS, the backup gate, and approval.
 
 `0010_b2_cost_integrity.sql` is unchanged and stays owned by 001. It drops the two-argument function permanently.
 
@@ -75,7 +75,7 @@ specs/002-live-security-remediation/
 
 supabase/migrations/             # created in implement, NOT now
 ├── 0009a_revoke_legacy_publish.sql
-└── 0009b_fix_profile_rls_recursion.sql
+└── 0009b_fix_rls_recursion.sql
 
 tests/
 └── security_rls_matrix.test.ts  # created in implement: PGlite fresh replay + five-role matrix
@@ -113,7 +113,7 @@ tests/
 0008_b2_pricing_foundation.sql        (Live: applied)
 0009_b2_publish_rpc.sql               (Live: applied)
 0009a_revoke_legacy_publish.sql       (002 step 1: containment)
-0009b_fix_profile_rls_recursion.sql   (002 step 2: permanent RLS fix + helper hardening)
+0009b_fix_rls_recursion.sql   (002 step 2: permanent RLS fix + helper hardening)
 0010_b2_cost_integrity.sql            (001: B2 rollout, unchanged file)
 ```
 
@@ -215,7 +215,7 @@ See [contracts/verification-matrix.md](./contracts/verification-matrix.md).
 | G0 | Any Live access | Local replay test PASS (for step 2); clean tree; migration file hashes recorded |
 | G1, containment | `0009a` apply | **Read-only snapshot**: `proacl`, inventory, row counts, usage check. **Pre-written reversal** (`rollout/recovery/R-0009a.sql`, a GRANT to the recorded grantees). **Owner explicit approval** for 0009a. No full backup (FR-021). |
 | G2, verify containment | Anything after 0009a | §C all PASS; otherwise STOP → recovery (owner-approved) |
-| G3, permanent fix | `0009b` apply | Local matrix PASS. **Backup gate** (same as 001 DN-1 = C): L1 recorded, L2 MCP export, and L3 `pg_dump -Fc` verified with `pg_restore --list`, with the owner typing the password in a terminal; else BLOCKED. Pre-written reverse `R-0009b.sql` (restores the snapshotted old policy and helper definitions). Read-only snapshot. **Owner explicit approval** for 0009b. |
+| G3, permanent fix | `0009b` apply | **G2 containment PASS first (D-3).** Local matrix PASS. **Backup gate** (same as 001 DN-1 = C): L1 recorded, L2 MCP export, and L3 `pg_dump -Fc` verified with `pg_restore --list`, with the owner typing the password in a terminal; else BLOCKED. Pre-written reverse `R-0009b.sql` (restores the snapshotted old policy and helper definitions). Read-only snapshot. **Owner explicit approval** for 0009b. |
 | G4, verify fix | 002 PASS | §M + §R all PASS, §S PASS or NOT TESTED with a reason (NOT TESTED → INCOMPLETE, not PASS) |
 
 All gates:
@@ -228,6 +228,16 @@ All gates:
 - **FAIL**: any FAIL.
 - **BLOCKED**: stopped before 0009a, or before 0009b at G3.
 - **INCOMPLETE**: no FAIL, but some required item is NOT TESTED or BLOCKED.
+
+## Decisions (resolved by owner, 2026-11-07)
+
+| # | Decision | Resolution |
+|---|---|---|
+| D-1 | Migration naming / canonical sequence | **Resolved.** The files are `0009a_revoke_legacy_publish.sql` and `0009b_fix_rls_recursion.sql`. The sequence is `0008 → 0009 → 0009a → 0009b → 0010`. The existing `0010_b2_cost_integrity.sql` is **not** renumbered or edited. History names equal the repo filenames. |
+| D-2 | Helper hardening in 0009b | **Resolved: approved.** `is_admin()` and `is_active_user()` get `SET search_path = ''`, the fully qualified `public.user_profiles`, and `STABLE`. Authorization semantics are unchanged; the access model and the M-07 and S1 control checks prove identical results. |
+| D-3 | Containment timing | **Resolved: approved.** 0009a is an independent, separately approved step. It must be applied and verified §C all PASS (G1 → G2) **before** any 0009b work starts: no 0009b backup, approval, or apply until containment is PASS. |
+
+No open decisions remain for planning.
 
 ## Risks
 
