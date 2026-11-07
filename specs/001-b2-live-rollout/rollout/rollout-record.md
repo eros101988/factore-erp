@@ -23,6 +23,7 @@ _pending T008_
 | 3 | 2026-11-07 22:21 (Asia/Taipei) | agent | T003-T005 | author read-only SQL, B-check scripts, reverse scripts, runbook | rollout/sql, rollout/recovery | OK | — |
 | 4 | 2026-11-07 22:21 (Asia/Taipei) | agent | T006 | PGlite dry-run of all authored SQL | rollout/* | FAIL (33 OK / 1 FAIL: B-11-staff, user_profiles RLS recursion from 0002) | evidence/00-dryrun.txt |
 | 5 | 2026-11-07 22:21 (Asia/Taipei) | agent | STOP | run stopped per R1; T007+ not started; Live not accessed | — | STOPPED | — |
+| 6 | 2026-11-07 (Asia/Taipei) | agent | DIAG | owner-requested read-only Live diagnostic (policies, functions, RLS probe, privileges, counts) | rollout/sql/rls-probe.sql | RECURSION CONFIRMED; 0008+0009 already applied on Live; 2-arg publish fn anon-executable; Live unchanged | evidence/01-diagnostic-rls.md |
 
 ## Verification Results
 _pending_
