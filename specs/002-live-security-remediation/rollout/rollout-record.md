@@ -6,7 +6,7 @@ Evidence holds catalog facts, counts and fingerprints only. Backups (later, G3) 
 | File | Blob | Live status |
 |---|---|---|
 | 0009a_revoke_legacy_publish.sql | cc9632f1 | APPLIED 2026-11-08 00:13 (Asia/Taipei) (history version 20261107161231); G2 PASS |
-| 0009b_fix_rls_recursion.sql | - | not authored yet (T009) |
+| 0009b_fix_rls_recursion.sql | b9de803a | NOT applied (authored + locally verified; awaiting T012/T013) |
 | 0010_b2_cost_integrity.sql | 7fa1e20d | not applied; owned by 001 |
 
 ## Step log (append-only)
@@ -22,6 +22,10 @@ Evidence holds catalog facts, counts and fingerprints only. Backups (later, G3) 
 | 8 | 2026-11-08 00:13 (Asia/Taipei) | agent | T007 | apply_migration 0009a_revoke_legacy_publish.sql (pre-checks: blob, project, usage, snapshot unchanged) | OK | evidence/C-containment.md |
 | 9 | 2026-11-08 00:13 (Asia/Taipei) | agent | T008 | containment verification C-01..C-06 | PASS 6/6 (G2 PASS) | evidence/C-containment.md |
 | 10 | 2026-11-08 00:13 (Asia/Taipei) | agent | STOP | stopped after T008 per owner instruction; 0009b/0010 not started | STOPPED | - |
+| 11 | 2026-11-08 00:31 (Asia/Taipei) | agent | T009 | author 0009b_fix_rls_recursion.sql | PASS | evidence/02-local-0009b.md |
+| 12 | 2026-11-08 00:31 (Asia/Taipei) | agent | T010 | local L-01/L-02/L-03/L-05 (55/55) | PASS | evidence/02-post0009b-matrix.txt |
+| 13 | 2026-11-08 00:31 (Asia/Taipei) | agent | T011 | Live read-only pre-0009b snapshot; R-0009b generated + dry-run | PASS | evidence/02-local-0009b.md |
+| 14 | 2026-11-08 00:31 (Asia/Taipei) | agent | T012 | L2 MCP export (data md5-verified) | L2 PASS; L1/L3 pending | evidence/02-local-0009b.md |
 
 ## Verdict
 _pending (T017)_

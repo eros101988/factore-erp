@@ -14,6 +14,14 @@ const has = (file: string) => fs.existsSync(path.join(MIG_DIR, file));
 
 export const F_0009 = '0009_b2_publish_rpc.sql';
 export const F_0009A = '0009a_revoke_legacy_publish.sql';
+export const F_0009B = '0009b_fix_rls_recursion.sql';
+export const F_0010 = '0010_b2_cost_integrity.sql';
+// Live applied order (F1): 0002 appears twice in Live history.
+const LIVE_ORDER = ['0001_initial_schema.sql', '0002_add_rls_and_profiles.sql', '0003_import_rpc.sql',
+  '0002_add_rls_and_profiles.sql', '0004_b1_data_intake_foundation.sql', '0005_b1_rls.sql', '0006_b1_import_rpcs.sql',
+  '0007_b1_staging_rows.sql', '0008_b2_pricing_foundation.sql', F_0009, F_0009A, F_0009B];
+const FIXED_TABLES = ['user_profiles', 'import_batches', 'customers', 'historical_sales', 'historical_purchases',
+  'product_external_mappings', 'import_staging_rows', 'pricing_policies', 'supplier_price_lists', 'supplier_price_list_items'];
 
 const SUBJECT = '11111111-1111-1111-1111-111111111111';   // active admin test subject
 const OTHER = '22222222-2222-2222-2222-222222222222';     // another (staff) profile
@@ -233,5 +241,66 @@ describe.runIf(has(F_0009A))('002 L-04: after 0009a containment', () => {
     const elapsed = Date.now() - t0;
     expect(diffSnapshots(await snapshot(base), await snapshot(contained))).toEqual([]);
     expect(elapsed).toBeLessThan(15 * 60 * 1000);
+  }, 180_000);
+});
+
+const isFixedPolicy = (row: string) => FIXED_TABLES.some(t => row.includes(`"tablename":"${t}"`));
+
+describe.runIf(has(F_0009B))('002 L-01..L-03: after 0009b permanent fix', () => {
+  it('L-01 fresh replay 0001 -> 0009b: full access model matches, 0 recursion, helpers hardened', async () => {
+    const db = await buildDb(upTo(F_0009B));
+    const m = await runMatrix(db);
+    console.log('[002 post-0009b matrix]\n' + JSON.stringify(m, null, 1));
+    expect(mismatches(m)).toEqual([]);
+    expect(JSON.stringify(m)).not.toContain('RECURSION');
+    const helpers = (await db.query<{ proname: string; cfg: string; vol: string; secdef: boolean; src: string }>(
+      `SELECT proname, array_to_string(proconfig, ',') AS cfg, provolatile AS vol, prosecdef AS secdef, prosrc AS src
+       FROM pg_proc WHERE proname IN ('is_admin', 'is_active_user') AND pronamespace = 'public'::regnamespace ORDER BY 1`)).rows;
+    expect(helpers).toHaveLength(2);
+    for (const h of helpers) {
+      expect(h.cfg).toBe('search_path=""');
+      expect(h.vol).toBe('s');
+      expect(h.secdef).toBe(true);
+      expect(h.src).toContain('public.user_profiles');
+    }
+  }, 180_000);
+
+  it('0009b touches only the 2 helpers and the 21 user_profiles/B1/B2 policies', async () => {
+    const d = diffSnapshots(await snapshot(await buildDb(upTo(F_0009A))), await snapshot(await buildDb(upTo(F_0009B))));
+    const outside = d.filter(x => !(x.includes('policies:') && FIXED_TABLES.some(t => x.includes(`"tablename":"${t}"`)))
+      && !(x.includes('functions:') && (x.includes('is_admin()') || x.includes('is_active_user()'))));
+    expect(outside).toEqual([]);
+    expect(d.filter(x => x.startsWith('+ policies:')).length).toBe(21);
+  }, 180_000);
+
+  it('L-02 replay through 0010: matrix still matches, fixed policies unchanged, legacy function absent', async () => {
+    const at9b = await buildDb(upTo(F_0009B));
+    const at10 = await buildDb(upTo(F_0010));
+    const p9b = (await snapshot(at9b)).policies.filter(isFixedPolicy);
+    const p10 = (await snapshot(at10)).policies.filter(isFixedPolicy);
+    expect(p10).toEqual(p9b);
+    const legacy = (await at10.query<{ present: boolean }>(
+      `SELECT to_regprocedure('public.publish_supplier_price_list(uuid,uuid)') IS NOT NULL AS present`)).rows[0];
+    expect(legacy.present).toBe(false);
+    const m = await runMatrix(at10);
+    const mm = mismatches(m).filter(x => !x.startsWith('fn.publish_2arg.execute'));
+    expect(mm).toEqual([]);
+    expect(JSON.stringify(m)).not.toContain('RECURSION');
+  }, 240_000);
+
+  it('L-03 Live-like replay (Live history order, 0002 twice) equals fresh replay object by object', async () => {
+    const fresh = await snapshot(await buildDb(upTo(F_0009B)));
+    const liveLike = await snapshot(await buildDb(LIVE_ORDER));
+    expect(diffSnapshots(fresh, liveLike)).toEqual([]);
+  }, 180_000);
+});
+
+const R_0009B = path.join(__dirname, '..', 'specs', '002-live-security-remediation', 'rollout', 'recovery', 'R-0009b.sql');
+describe.runIf(has(F_0009B) && fs.existsSync(R_0009B))('002 T011: R-0009b dry-run', () => {
+  it('R-0009b (generated from the Live catalog) restores the exact post-0009a objects on a Live-like replay', async () => {
+    const at9a = await snapshot(await buildDb(LIVE_ORDER.slice(0, -1)));
+    const db = await buildDb(LIVE_ORDER);
+    await db.exec(fs.readFileSync(R_0009B, 'utf8'));
+    expect(diffSnapshots(at9a, await snapshot(db))).toEqual([]);
   }, 180_000);
 });

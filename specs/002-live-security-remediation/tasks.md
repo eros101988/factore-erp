@@ -75,12 +75,12 @@ description: "Task list for Live Security Remediation (002-live-security-remedia
 
 ## Phase 4: Permanent fix, local (US2, US4)
 
-- [ ] T009 [US2] Author `supabase/migrations/0009b_fix_rls_recursion.sql` per plan Decision 3 and D-2:
+- [X] T009 [US2] Author `supabase/migrations/0009b_fix_rls_recursion.sql` per plan Decision 3 and D-2:
   - harden the helpers (`search_path = ''`, `public.user_profiles`, `STABLE`, semantics unchanged);
   - rewrite the 3 `user_profiles` policies;
   - rewrite the 12 B1 and 6 B2 policies, keeping their names and adding an explicit `WITH CHECK` on admin ALL.
   - **Acceptance:** it touches only those objects. No S1 policy, no `auth.users`, no data.
-- [ ] T010 [US3] [US4] Local fresh replay + five-role matrix: §L-01, §L-02, §L-03, §L-05.
+- [X] T010 [US3] [US4] Local fresh replay + five-role matrix: §L-01, §L-02, §L-03, §L-05.
   - **Acceptance:** all PASS, which means:
     - 0 recursion errors and every access-model cell matching;
     - 0010 leaves the 0009b policies unchanged and the two-argument function absent (FR-019);
@@ -90,7 +90,7 @@ description: "Task list for Live Security Remediation (002-live-security-remedia
 
 ## Phase 5: Backup gate for 0009b (US2) — gate G3 (requires T008 PASS)
 
-- [ ] T011 [US2] Take the Live **read-only** pre-0009b snapshot: the current `user_profiles`, B1, and B2 policy definitions, the helper definitions, the inventory, and row counts. Generate `rollout/recovery/R-0009b.sql` from it (plan Decision 6).
+- [X] T011 [US2] Take the Live **read-only** pre-0009b snapshot: the current `user_profiles`, B1, and B2 policy definitions, the helper definitions, the inventory, and row counts. Generate `rollout/recovery/R-0009b.sql` from it (plan Decision 6).
   - **Acceptance:** the snapshot is saved, and R-0009b restores exactly the snapshotted definitions (dry-run locally on a Live-like replay).
 - [ ] T012 [US2] Three-layer backup gate (plan G3; 001 DN-1 = C):
   - L1: platform backup / PITR status recorded;

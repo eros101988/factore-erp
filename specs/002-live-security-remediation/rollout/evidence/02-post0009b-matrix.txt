@@ -1,0 +1,29 @@
+# T010 post-0009b matrix (fresh replay 0001 -> 0009b, PGlite) - 2026-11-08 00:31 (Asia/Taipei)
+# All cells match contracts/access-model.md; 0 RECURSION.
+
+profile.own.read                        A=yes       S=yes       I=yes       N=0 rows    X=0 rows    
+profile.other.read                      A=yes       S=0 rows    I=0 rows    N=0 rows    X=0 rows    
+profile.update                          A=yes       S=deny      I=deny      N=deny      X=deny      
+B1.import_batches.read                  A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B1.import_batches.write                 A=yes       S=deny      I=deny      N=deny      X=deny      
+B1.customers.read                       A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B1.customers.write                      A=yes       S=deny      I=deny      N=deny      X=deny      
+B1.historical_sales.read                A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B1.historical_sales.write               A=yes       S=deny      I=deny      N=deny      X=deny      
+B1.historical_purchases.read            A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B1.historical_purchases.write           A=yes       S=deny      I=deny      N=deny      X=deny      
+B1.product_external_mappings.read       A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B1.product_external_mappings.write      A=yes       S=deny      I=deny      N=deny      X=deny      
+B1.import_staging_rows.read             A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B1.import_staging_rows.write            A=yes       S=deny      I=deny      N=deny      X=deny      
+B2.pricing_policies.read                A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B2.pricing_policies.write               A=yes       S=deny      I=deny      N=deny      X=deny      
+B2.supplier_price_lists.read            A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B2.supplier_price_lists.write           A=yes       S=deny      I=deny      N=deny      X=deny      
+B2.supplier_price_list_items.read       A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+B2.supplier_price_list_items.write      A=yes       S=deny      I=deny      N=deny      X=deny      
+S1.products.read                        A=yes       S=yes       I=0 rows    N=0 rows    X=0 rows    
+S1.products.write                       A=yes       S=deny      I=deny      N=deny      X=deny      
+fn.is_admin                             A=true      S=false     I=false     N=false     X=false     
+fn.is_active_user                       A=true      S=true      I=false     N=false     X=false     
+fn.publish_2arg.execute                 A=deny      S=deny      I=deny      N=deny      X=deny      
