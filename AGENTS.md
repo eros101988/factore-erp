@@ -7,3 +7,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Project rules (all agents: Claude, Trae, others)
+
+- Invariants: `.specify/memory/constitution.md` — must hold for every change.
+- Current status / pending work: `.specify/memory/project-state.md`.
+- Feature flow: Spec Kit (`/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`); specs live in `specs/`.
+- Supabase: follow `.claude/skills/supabase` and `.claude/skills/supabase-postgres-best-practices`. Never change the Live DB unless the task explicitly says so.
