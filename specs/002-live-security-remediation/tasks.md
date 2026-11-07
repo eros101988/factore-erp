@@ -64,11 +64,11 @@ description: "Task list for Live Security Remediation (002-live-security-remedia
   - the object inventory, row counts, and the usage baseline (§C-06).
   Then finalize `R-0009a.sql` with the recorded grantees.
   - **Acceptance:** evidence is saved under `evidence/01-*`. If the usage check is non-zero or F1–F6 no longer hold → STOP and report.
-- [ ] T006 [US1] **Owner approval gate (containment).** Present the snapshot, the exact 0009a content, and R-0009a. Get explicit approval in chat.
+- [X] T006 [US1] **Owner approval gate (containment).** Present the snapshot, the exact 0009a content, and R-0009a. Get explicit approval in chat.
   - **Acceptance:** the approval is quoted verbatim with a timestamp in `rollout-record.md`. Missing or ambiguous approval → BLOCKED.
-- [ ] T007 [US1] Apply 0009a via MCP `apply_migration` (name `0009a_revoke_legacy_publish.sql`, exact file content, hash re-checked).
+- [X] T007 [US1] Apply 0009a via MCP `apply_migration` (name `0009a_revoke_legacy_publish.sql`, exact file content, hash re-checked).
   - **Acceptance:** no error. An error → STOP, then Phase R (T019).
-- [ ] T008 [US1] **Independently verify containment**: §C-01…C-06.
+- [X] T008 [US1] **Independently verify containment**: §C-01…C-06.
   - **Acceptance:** all PASS, with evidence in `evidence/C-*.json`. This is gate **G2**; T011 and later can't start without it. Any FAIL → Phase R (T019).
 
 ---
