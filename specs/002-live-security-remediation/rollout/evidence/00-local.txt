@@ -1,0 +1,26 @@
+# T001 local baseline - 2026-11-07 23:51 (Asia/Taipei)
+branch: 002-live-security-remediation (synced with origin/main 734face), tree clean before work
+migration blob hashes:
+  0001 3e55b4fe  0002 51832abe  0003 c0a2efa0  0004 d6983a1d  0005 bf2e4a7b
+  0006 e875eb23  0007 3a42f7ed  0008 5316bd65  0009 de11dcb9
+  0010_b2_cost_integrity.sql 7fa1e20d9e09f913280b74e4681ecac87c0eb581  (unchanged)
+npx vitest run (before 002 files): 6 files, 48 passed
+T001 RESULT: PASS
+
+# T002 matrix test authored: tests/security_rls_matrix.test.ts - baseline test PASS (reproduces F2/F4/F5); see 00-baseline.txt
+T002 RESULT: PASS (baseline documented)
+
+# T003 authored
+supabase/migrations/0009a_revoke_legacy_publish.sql  blob cc9632f1173b081210f40d7cc2a548ec52e9171e
+  content: REVOKE EXECUTE ON FUNCTION public.publish_supplier_price_list(uuid, uuid) FROM PUBLIC, anon, authenticated;
+  sort order: 0009_b2_publish_rpc.sql < 0009a_revoke_legacy_publish.sql < 0010_b2_cost_integrity.sql
+rollout/recovery/R-0009a.sql (template; finalized at T005)
+T003 RESULT: PASS
+
+# T004 local verification (L-04, L-05, reversal)
+npx vitest run: 7 files, 51 passed, 0 failed
+  L-04: after 0009a anon/authenticated/PUBLIC EXECUTE = false, service_role = true; object diff vs post-0009 = only the legacy function ACL;
+        matrix: legacy publish = deny for A/S/I/N/X, every other cell identical to baseline
+  reversal: R-0009a restores post-0009 ACL exactly (compared as sorted ACL set), well under 15 min (SC-007)
+  test fix during T004: ACL comparison made order-insensitive (GRANT re-orders aclitem entries; grantee set identical) - test defect, not a migration change
+T004 RESULT: PASS
