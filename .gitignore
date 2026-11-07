@@ -47,3 +47,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Claude agent folder: share skills, keep local settings/credentials out
+.claude/*
+!.claude/skills/
