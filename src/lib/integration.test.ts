@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { saveQuoteAction } from '@/app/actions/quote';
 import { ProductRepository, ConfigRepository, QuoteRepository } from '@/repositories';
 import { processImportAction } from '@/app/actions/import';
+import { pickEffectiveCost } from '@/lib/pricing/costResolver';
+
+vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
+
+const cost100 = pickEffectiveCost([{ id: 'c1', product_id: 'p1', supplier_id: 's1', external_supplier_sku: 'S1', unit_cost: 100, cost_unit: 'Box', pack_qty: null, pack_cost: null, effective_date: '2026-10-01', source_price_list_id: 'pl1' }], '2026-10-15');
 
 // Mock the repositories
 vi.mock('@/repositories', () => ({
@@ -11,7 +16,7 @@ vi.mock('@/repositories', () => ({
   },
   ConfigRepository: {
     getChannelFee: vi.fn(),
-    getTiers: vi.fn(),
+    getPricingPolicies: vi.fn(),
   },
   QuoteRepository: {
     saveQuote: vi.fn(),
@@ -24,14 +29,12 @@ describe('S1.5 Integration & Validation Tests', () => {
     vi.mocked(ProductRepository.getProducts).mockResolvedValue([
       { id: 'p1', internal_sku: 'SKU1', name: 'Product 1', specification: '', sales_unit: 'Box', items_per_box: 1 }
     ]);
-    vi.mocked(ProductRepository.getEffectiveCost).mockResolvedValue({
-      product_id: 'p1', unit_cost: 100, effective_date: '2026-10-01'
-    });
+    vi.mocked(ProductRepository.getEffectiveCost).mockResolvedValue(cost100);
     vi.mocked(ConfigRepository.getChannelFee).mockResolvedValue({ feeRate: 0, fixedFee: 0 });
-    vi.mocked(ConfigRepository.getTiers).mockResolvedValue([]);
+    vi.mocked(ConfigRepository.getPricingPolicies).mockResolvedValue([]);
     
-    vi.mocked(QuoteRepository.saveQuote).mockImplementation(async (quote) => {
-      return { ...quote, id: 'q1', quote_number: 'Q1', created_at: '2026-10-01' };
+    vi.mocked(QuoteRepository.saveQuote).mockImplementation(async (quote, items) => {
+      return { ...quote, items, id: 'q1', quote_number: 'Q1', created_at: '2026-10-01' } as any;
     });
 
     const result = await saveQuoteAction({
@@ -39,7 +42,7 @@ describe('S1.5 Integration & Validation Tests', () => {
       quantity: 10,
       fixedCost: 0,
       channelId: 'c1',
-      tierId: 't1',
+      tier: null,
       targetMargin: 0.2, // 20%
       customerName: 'Test'
     });
@@ -49,7 +52,8 @@ describe('S1.5 Integration & Validation Tests', () => {
     expect(QuoteRepository.saveQuote).toHaveBeenCalledWith(
       expect.objectContaining({
         total_untaxed: 1250
-      })
+      }),
+      expect.any(Array)
     );
   });
 
@@ -121,7 +125,7 @@ describe('S1.5 Integration & Validation Tests', () => {
       quantity: 1,
       fixedCost: 0,
       channelId: 'c1',
-      tierId: 't1',
+      tier: null,
       targetMargin: 0.2,
       customerName: 'Test',
       // If a hacker adds these to the payload, TypeScript/Action ignores them because they are not destructured or used.
@@ -135,7 +139,8 @@ describe('S1.5 Integration & Validation Tests', () => {
     expect(QuoteRepository.saveQuote).toHaveBeenCalledWith(
       expect.objectContaining({
         total_untaxed: 125 // 100 / (1 - 0.2)
-      })
+      }),
+      expect.any(Array)
     );
   });
 });

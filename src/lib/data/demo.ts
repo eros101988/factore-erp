@@ -92,6 +92,12 @@ export interface QuoteItemSnapshot {
   tax_rate: number;
   tax_amount: number;
   total: number;
+  // B2 cost source / policy snapshot
+  supplier_name?: string | null;
+  supplier_sku?: string | null;
+  cost_unit?: string | null;
+  pricing_tier?: string | null;
+  default_margin?: number | null;
 }
 
 export interface Quote {
