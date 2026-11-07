@@ -132,7 +132,13 @@ If the rollout fails or produces a bad state, the owner has a documented way bac
 - **FR-014**: Each Live change (each migration, verification run, and cleanup) MUST be logged with time, actor, and outcome in a rollout record kept in the repository.
 - **FR-015**: The rollout MUST NOT add features, change application code, or process real supplier PDFs. A defect found in a migration is reported and stops the rollout. It is fixed in a separate, approved change.
 - **FR-016**: Migrations MUST be applied through the connected Supabase MCP formal migration workflow (D-3), so each of 0008, 0009, 0010 is recorded in the Live migration history. A failed migration MUST NOT be retried automatically. The history after rollout MUST let future migrations apply cleanly.
-- **FR-017**: Before rollout, the agent MUST record whether the Live project has daily backups or point-in-time recovery (Layer 1, checked read-only). It MUST also take a manual logical backup of schema and data (Layer 2), record where it is stored, and confirm the file is complete and readable. The rollout is BLOCKED if neither a restorable automatic backup is confirmed nor the manual backup is completed. The manual backup MUST be stored outside the repository and never committed, because it contains business data.
+- **FR-017**: Before rollout:
+  - The agent MUST record whether the Live project has daily backups or point-in-time recovery (Layer 1, checked read-only).
+  - It MUST take a schema snapshot plus a `public` data export through the database connection (Layer 2).
+  - It MUST take a formal logical backup with the standard dump tool (Layer 3).
+  - Layers 2 and 3 MUST both be completed and verified readable. If a verified formal backup cannot be obtained, the rollout is BLOCKED.
+  - Backups MUST be stored outside the repository and never committed.
+  - The database password MUST be entered only by the owner into an interactive local terminal prompt, and never into chat, files, or logs.
 - **FR-018**: The agent performs backup steps itself. It asks the owner only for actions that require the owner's own account login or personal authorization.
 
 ### Key Entities
@@ -175,4 +181,9 @@ If the rollout fails or produces a bad state, the owner has a documented way bac
   - **Layer 2:** regardless of Layer 1, take a manual logical backup (schema + data) before rollout. The agent does this itself, and asks the owner only when an account login or the owner's personal authorization is required.
   - **Gate:** if no restorable automatic backup can be confirmed AND the manual backup cannot be completed, the rollout is BLOCKED.
 - **D-2 Verification location**: Q: Where do publish/rollback/append-only checks run? → A: Option A, directly on Live with synthetic `[TEST]` data. Non-test row counts are recorded before and after, and test data is cleaned up afterwards. If cleanup cannot be completed safely, the result is FAIL/BLOCKED, never PASS.
+- **DN-1/2/3 (plan decisions, 2026-11-07)**:
+  - **Backup:** all three layers. The formal dump is required, and the rollout is BLOCKED without it.
+  - **Behavioral tests:** run only inside forced-rollback transactions; no `[TEST]` business data is committed.
+  - **Identities:** transaction-local role/JWT-claim simulation only. Admin/staff come from the existing test subject plus a transaction-local profile change.
+  - **No Auth user** is ever created or deleted. Checks that can't be verified without one are BLOCKED / NOT TESTED, and reported.
 - **D-3 Apply channel**: Q: How are migrations applied and recorded? → A: through the connected Supabase MCP, using the formal migration workflow so each step is recorded in migration history. The order is 0008 → 0009 → 0010, each verified before the next, with no skipping and no automatic retry of a failed migration.
